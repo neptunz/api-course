@@ -1,5 +1,12 @@
 // database is let instead of const to allow us to modify it in test.js
 
+/*
+Note to reviewers:
+I left lots of comments in here so I can review what I was struggling with 
+and to look back at what the heck I was thinking. Hopefully, in the near 
+future this will just be funny, but right now the struggle is real.
+*/
+
 const pp = obj => JSON.stringify(obj, null, 2);
 
 let database = {
@@ -442,7 +449,7 @@ const requestHandler = (request, response) => {
     return response.end();
   }
 
-  response.setHeader('Access-Control-Allow-Origin', null);
+  response.setHeader('Access-Control-Allow-Origin', "*");
   response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   response.setHeader(
       'Access-Control-Allow-Headers', 'X-Requested-With,content-type');
