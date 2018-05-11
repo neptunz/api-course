@@ -3,36 +3,10 @@
 const pp = obj => JSON.stringify(obj, null, 2);
 
 let database = {
-  users: {
-    // username: username,
-    username: '',
-    articleIds: [],
-    commentIds: []
-  },
-  articles: {
-    // id: database.nextArticleId++,
-    // title: requestArticle.title,
-    // url: requestArticle.url,
-    // username: requestArticle.username,
-    id: null,
-    title: '',
-    url: '',
-    username: '',
-    commentIds: [],
-    upvotedBy: [],
-    downvotedBy: [],
-  },
+  users: {},
+  articles: {},
   nextArticleId: 1,
-  comments: {
-    // id: null,
-    // //body: requestComment,
-    // body: '',
-    // username: '',
-    // //articleId: null,
-    // articleId: '',
-    // upvotedBy: [],
-    // downvotedBy: []
-  },
+  comments: {},
   nextCommentId: 1
 };
 
@@ -62,16 +36,16 @@ const routes = {
     'POST': createComment
   },
   '/comments/:id': {
-    'GET': getComment,
+    //'GET': getComment,
     'PUT': updateComment,
     'DELETE': deleteComment
   },
   '/comments/:id/upvote': {
-    'GET': getCommentUpvote,
+    //'GET': getCommentUpvote,
     'PUT': updateCommentUpvote
   },
   '/comments/:id/downvote': {
-    'GET': getCommentDownvote,
+    //'GET': getCommentDownvote,
     'PUT': updateCommentDownvote
   }
 };
@@ -288,24 +262,18 @@ function downvote(item, username) {
 }
 
 /*
-id - Number, unique to each comment
-body - String
-username - String, the username of the author
-articleId - Number, the ID of the article the comment belongs to
-upvotedBy - Array of usernames, corresponding to users who upvoted the comment
-downvotedBy - Array of usernames, corresponding to users who downvoted the comment
-
-If body isn't supplied, user with supplied username doesn't exist, or article with supplied article ID doesn't exist, returns a 400 response
-
-*/
 // below does not seem to be working completely
 function createComment(url, request) {
+    const id = Number(url.split('/').filter(segment => segment)[1]);
     const requestComment = request.body && request.body.comment;
+    const username = request.body && request.body.username;
+    const savedArticle = database.articles[id];
     const response = {};
 
     //console.log(`>>> comment: ${pp(request.body.comment)}`);
-
-    if (requestComment && requestComment.body && requestComment.url && requestComment.username && database.users[requestComment.username]) {
+    //requestComment.articleId
+    //if (requestComment && requestComment.body && requestComment.url && requestComment.username && database.users[requestComment.username] && savedArticle) {
+    if (requestComment && requestComment.body && requestComment.url && database.users[username] && savedArticle) {
         const comment = {
             id: database.nextCommentId++,
             body: requestComment.body,
@@ -325,6 +293,43 @@ function createComment(url, request) {
         response.status = 400;
     }
 
+    console.log(`>>> comment: ${pp(request.body.comment)}`);
+}
+
+*/
+// below does not seem to be working completely
+function createComment(url, request) {
+    //const id = Number(url.split('/').filter(segment => segment)[1]);
+    const requestComment = request.body && request.body.comment;
+    //const username = request.body && request.body.username;
+    //const savedArticle = database.articles[id];
+    const response = {};
+
+    //console.log(`>>> comment: ${pp(request.body.comment)}`);
+    //requestComment.articleId
+    //if (requestComment && requestComment.body && requestComment.url && requestComment.username && database.users[requestComment.username] && savedArticle) {
+    //if (requestComment && requestComment.body && requestComment.url && database.users[requestComment.username] && database.articles[id]) {
+    if (requestComment && requestComment.body && requestComment.username && requestComment.articleId && database.users[requestComment.username] && database.articles[requestComment.articleId]) { 
+        const comment = {
+            id: database.nextCommentId++,
+            body: requestComment.body,
+            username: requestComment.username,
+            articleId: requestComment.articleId,
+            upvotedBy: [],
+            downvotedBy: []
+        };
+
+        database.comments[comment.id] = comment;
+        database.users[comment.username].commentIds.push(comment.id);
+        database.articles[comment.articleId].commentIds.push(comment.id);
+
+        response.body = {comment: comment};
+        response.status = 201;
+    } else {
+        response.status = 400;
+    }
+
+    return response;
     //console.log(`>>> comment: ${pp(request.body.comment)}`);
 }
 
@@ -335,12 +340,14 @@ function updateComment(url, request) {
     const requestComment = request.body && request.body.comment;
     const response = {};
 
-    if (!id || !requestComment) {
+    //if (!id || !requestComment) {
+    if(!id || !requestComment || !requestComment.body){
     response.status = 400;
     } else if (!savedComment) {
     response.status = 404;
     } else {
-    savedComment.body = requestComment.body || savedComment.body;
+    database.comments[id].body= requestComment.body
+    //savedComment.body = requestComment.body || savedComment.body;
     //savedComment.url = requestComment.url || savedComment.url;
 
     response.body = {comment: savedComment};
@@ -350,8 +357,7 @@ function updateComment(url, request) {
     return response;
 }
 
-//not sure this is right
-/*
+// FINALLY WE HAVE ONE WORKING
 function updateCommentUpvote(url, request) {
   const id = Number(url.split('/').filter(segment => segment)[1]);
   const username = request.body && request.body.username;
@@ -369,7 +375,25 @@ function updateCommentUpvote(url, request) {
 
   return response;
 }
-*/
+
+// FINALLY WE HAVE ONE WORKING
+function updateCommentDownvote(url, request) {
+  const id = Number(url.split('/').filter(segment => segment)[1]);
+  const username = request.body && request.body.username;
+  let savedComment = database.comments[id];
+  const response = {};
+
+  if (savedComment && database.users[username]) {
+    savedComment = downvote(savedComment, username);
+
+    response.body = {comment: savedComment};
+    response.status = 200;
+  } else {
+    response.status = 400;
+  }
+
+  return response;
+}
 
 // FINALLY WE HAVE ONE WORKING
 function deleteComment(url, request) {
@@ -393,25 +417,6 @@ function deleteComment(url, request) {
 
   return response;
 }
-
-
-function getComment() {}
-
-//function updateComment() {}
-
-//function deleteComment() {}
-
-function getCommentUpvote() {}
-
-function updateCommentUpvote() {}
-
-function getCommentDownvote() {}
-
-function updateCommentDownvote() {}
-
-
-
-
 
 // Write all code above this line.
 
