@@ -111,9 +111,11 @@ const bestEvent = country => {
 /*
 Returns a SQL query string that will find the number of male medalists.
 */
-
+/*
+Takes an argument, the name of a country. Returns the SQL command that will retrieve the number of men who have won Olympic medals for that country, aliased to the name count.
+ */
 const numberMenMedalists = country => {
-  return;
+  return `SELECT gender, COUNT(DISTINCT name) AS 'count' FROM GoldMedal WHERE country = '${country}' AND gender = 'Men' GROUP BY country ORDER BY COUNT(*) DESC`;
 };
 
 /*
@@ -121,24 +123,41 @@ Returns a SQL query string that will find the number of female medalists.
 */
 
 const numberWomenMedalists = country => {
-  return;
+  return `SELECT gender, COUNT(DISTINCT name) AS 'count' FROM GoldMedal WHERE country = '${country}' AND gender = 'Women' GROUP BY country ORDER BY COUNT(*) DESC`;
 };
 
 /*
 Returns a SQL query string that will find the athlete with the most medals.
 */
+/*
+Takes an argument, the name of a country. returns the sql command that will retrieve the name of the athlete who won olympic medals for that country, aliased to the name count.
+ */
 
 const mostMedaledAthlete = country => {
-  return;
+  return `SELECT name, COUNT(*) AS 'count' FROM GoldMedal WHERE country = '${country}' GROUP BY name ORDER BY COUNT(*) DESC LIMIT 1`;
+  // better below... but not because missing alias
+  // return `SELECT name FROM GoldMedal WHERE country = '${country}' GROUP BY name ORDER BY COUNT(*) DESC LIMIT 1`;
 };
 
 /*
 Returns a SQL query string that will find the medals a country has won
 optionally ordered by the given field in the specified direction.
 */
+/*
+Takes three arguments, the name of the country and, optionally, a field to sort the results by and a boolean representing the direction the sort should go in. This function should return a SQL query that returns all fields for every Olympic medal won by the given country. When the field argument is present, the function should return a SQL query that orders the results by that field -- ascending if the direction is true and descending if the direction is false.
+ */
 
 const orderedMedals = (country, field, sortAscending) => {
-  return;
+  let orderingString = '';
+  let isAscending = 'ASC';
+  if (field) {
+    if (isAscending) {
+      orderingString = `ORDER BY ${field} ASC`;
+    } else {
+      orderingString = `ORDER BY ${field} DESC`;
+    }
+  }
+  return `SELECT * FROM GoldMedal WHERE country = '${country}' ${orderingString};`;
 };
 
 /*
@@ -147,9 +166,21 @@ won medals in. It should include the number of medals, aliased as 'count',
 as well as the percentage of this country's wins the sport represents,
 aliased as 'percent'. Optionally ordered by the given field in the specified direction.
 */
+/*
+Takes three arguments, the name of the country and, optionally, a field to sort the results by and a boolean representing the direction the sort should go in. This function should return a SQL query that retrieves all the sports that country has received a Gold Medal in, additionally the query returned should return the number of times the given country received a medal in that sport, aliased to the name count, furthermore the query should calculate, as a percentage, how much of the country's Olympic gold medals were in that sport, aliased to the name 'percent'. When the field argument is present, the function should return a SQL query that orders the results by that field -- ascending if the direction is true and descending if the direction is false.
+ */
 
 const orderedSports = (country, field, sortAscending) => {
-  return;
+  let orderingString = '';
+  let isAscending = 'ASC';
+  if (field) {
+    if (isAscending) {
+      orderingString = `ORDER BY ${field} ASC`;
+    } else {
+      orderingString = `ORDER BY ${field} DESC`;
+    }
+  }
+  return `SELECT sport, COUNT(sport) AS count, (COUNT(sport) * 100 / (select COUNT(*) FROM GoldMedal WHERE country = '${country}')) AS percent FROM GoldMedal WHERE country = '${country}' GROUP BY sport ${orderingString};`;
 };
 
 module.exports = {
